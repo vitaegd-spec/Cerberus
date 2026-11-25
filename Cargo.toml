@@ -1,0 +1,36 @@
+[package]
+name = "cerberus"
+version = "0.6.1"
+edition = "2021"
+description = "CERBERUS - virtual drive mounter (Phases 0-6)"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rfd = "0.15"
+# zlib for stream-optimized VMDK / OVA grains (pure Rust backend)
+flate2 = "1"
+# MAME CHD decoder (pure Rust)
+chd = "0.3"
+# Phase 5 - archive readers (compiled into the exe)
+zip = "2"
+sevenz-rust = "0.6"
+unrar = "0.5"
+tar = "0.4"
+cab = "0.6"
+# loads Windows' ProjectedFSLib.dll at run time
+libloading = "0.8"
+
+[features]
+# Embed the ui\ folder into the exe so a plain `cargo build --release` gives a
+# standalone app (no Node.js / npm / tauri-cli needed).
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+opt-level = 3
+strip = true

@@ -1,0 +1,10 @@
+{
+  "start_with_windows": false,
+  "restore_mounts": false,
+  "context_menu": false,
+  "associations": [],
+  "readonly_default": true,
+  "open_after_external_mount": true,
+  "archive_letter": "Z",
+  "log_level": 0
+}

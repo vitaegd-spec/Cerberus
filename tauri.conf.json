@@ -1,0 +1,36 @@
+{
+  "productName": "CERBERUS",
+  "version": "0.6.1",
+  "identifier": "local.murphy.cerberus",
+  "build": {
+    "frontendDist": "ui"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "CERBERUS",
+        "width": 1040,
+        "height": 700,
+        "minWidth": 780,
+        "minHeight": 500,
+        "center": true,
+        "dragDropEnabled": true,
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": false,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/icon.png",
+      "icons/icon.ico"
+    ]
+  }
+}

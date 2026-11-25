@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CERBERUS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="23" fill="none" stroke="currentColor" stroke-width="3.5"/>
+        <circle cx="32" cy="32" r="14" fill="none" stroke="currentColor" stroke-width="2.5" opacity=".65"/>
+        <circle cx="21" cy="32" r="4.6" fill="currentColor"/>
+        <circle cx="32" cy="30" r="4.6" fill="currentColor"/>
+        <circle cx="43" cy="32" r="4.6" fill="currentColor"/>
+      </svg>
+      <div>
+        <div class="title">CERBERUS</div>
+        <div class="subtitle">Virtual drive mounter · <span id="version">…</span></div>
+      </div>
+    </div>
+    <div class="pills">
+      <span id="pill-admin" class="pill">Admin</span>
+      <span id="pill-engine" class="pill">iSCSI engine</span>
+    </div>
+  </header>
+
+  <div id="banner" class="banner hidden" role="alert"></div>
+
+  <section class="toolbar">
+    <button id="btn-mount" class="btn primary" type="button">＋ Mount image…</button>
+    <label class="check"><input type="checkbox" id="chk-ro"> Mount read-only</label>
+    <span class="spacer"></span>
+    <span id="busy" class="busy hidden" aria-live="polite"><span class="spinner"></span><span id="busy-text"></span></span>
+    <button id="btn-settings" class="btn" type="button" title="Settings">⚙ Settings</button>
+    <button id="btn-unmount-all" class="btn danger" type="button">Unmount all</button>
+  </section>
+
+  <main id="list" class="list" aria-live="polite"></main>
+
+  <section id="logpanel" class="logpanel">
+    <div class="loghead">
+      <span>Activity log</span>
+      <span class="spacer"></span>
+      <button id="btn-log-clear" class="btn small ghost" type="button">Clear</button>
+      <button id="btn-log" class="btn small ghost" type="button">Hide</button>
+    </div>
+    <div id="log" class="log"></div>
+  </section>
+
+  <!-- Initialize & Format / Format dialog -->
+  <div id="fmt" class="overlay modal hidden" role="dialog" aria-modal="true" aria-labelledby="fmt-title">
+    <form id="fmt-form" class="dialog">
+      <h2 id="fmt-title">Format</h2>
+      <div id="fmt-sub" class="dlg-sub"></div>
+
+      <label id="fmt-row-style" class="field">
+        <span>Partition style</span>
+        <select id="fmt-style">
+          <option value="GPT" selected>GPT (recommended)</option>
+          <option value="MBR">MBR (older systems, max 2 TB)</option>
+        </select>
+      </label>
+
+      <label id="fmt-row-letter" class="field">
+        <span>Drive</span>
+        <select id="fmt-letter"></select>
+      </label>
+
+      <label class="field">
+        <span>File system</span>
+        <select id="fmt-fs">
+          <option value="NTFS" selected>NTFS</option>
+          <option value="exFAT">exFAT</option>
+          <option value="FAT32">FAT32 (max 32 GB)</option>
+          <option value="FAT">FAT (floppies / tiny disks)</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Volume label</span>
+        <input id="fmt-label" type="text" maxlength="32" value="CERBERUS" autocomplete="off" spellcheck="false">
+      </label>
+
+      <label class="check"><input type="checkbox" id="fmt-full"> Full format (slow – zeroes every sector)</label>
+
+      <div id="fmt-warn" class="dlg-warn">⚠ This erases everything on the selected disk/drive inside the image file.</div>
+
+      <div class="dlg-actions">
+        <button id="fmt-cancel" class="btn" type="button">Cancel</button>
+        <button id="fmt-ok" class="btn primary" type="submit">Format</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Unmount dialog for overlay mounts -->
+  <div id="um" class="overlay modal hidden" role="dialog" aria-modal="true" aria-labelledby="um-title">
+    <div class="dialog">
+      <h2 id="um-title">Unmount</h2>
+      <div id="um-sub" class="dlg-sub"></div>
+      <p class="dlg-text">Changes made to this image were written to a separate changes file - the original image was not modified.</p>
+      <ul class="dlg-list">
+        <li><b>Keep changes</b> – they are re-applied automatically the next time you mount this image.</li>
+        <li><b>Discard changes</b> – the image goes back to exactly how it was.</li>
+      </ul>
+      <div class="dlg-actions">
+        <button id="um-cancel" class="btn" type="button">Cancel</button>
+        <button id="um-discard" class="btn danger" type="button">Discard changes</button>
+        <button id="um-keep" class="btn primary" type="button">Keep changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings dialog (Phase 6) -->
+  <div id="set" class="overlay modal hidden" role="dialog" aria-modal="true" aria-labelledby="set-title">
+    <form id="set-form" class="dialog wide">
+      <h2 id="set-title">Settings</h2>
+
+      <fieldset class="group">
+        <legend>Startup</legend>
+        <label class="check"><input type="checkbox" id="set-autostart"> Start CERBERUS with Windows (quietly, in the tray)</label>
+        <label class="check"><input type="checkbox" id="set-restore"> Re-mount last session's images when CERBERUS starts</label>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Explorer</legend>
+        <label class="check"><input type="checkbox" id="set-context"> Add “Mount with CERBERUS” to the right-click menu of supported files</label>
+        <label class="check"><input type="checkbox" id="set-openafter"> Open the drive after mounting from Explorer (right-click / double-click)</label>
+        <div class="hint">Windows 11 shows it under <i>Show more options</i> (or Shift + right-click).</div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Double-click to mount</legend>
+        <div class="hint">Register CERBERUS for these file types. Windows may still ask which app to use the first time – pick CERBERUS and tick “Always”.</div>
+        <div id="set-assoc" class="assoc"></div>
+        <div class="row">
+          <button id="set-assoc-none" class="btn small ghost" type="button">None</button>
+          <button id="set-assoc-common" class="btn small ghost" type="button">Common (CHD, VDI, VMDK, CUE, MDS, NRG, CDI)</button>
+          <span class="spacer"></span>
+          <button id="set-defapps" class="btn small" type="button">Windows Default apps…</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Mounting</legend>
+        <label class="check"><input type="checkbox" id="set-ro"> Mount read-only by default</label>
+        <label class="field inline"><span>Archive drive letters start at</span><select id="set-letter"></select></label>
+        <label class="field inline"><span>Log detail</span>
+          <select id="set-log">
+            <option value="0">Normal</option>
+            <option value="1">Debug (SCSI commands)</option>
+            <option value="2">Trace (every iSCSI message)</option>
+          </select>
+        </label>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Saved changes</legend>
+        <div class="hint">Changes kept for VDI, VMDK, OVA and hard-disk CHD images (the original images are never modified). They are re-applied the next time you mount that image. Delete the ones you no longer need.</div>
+        <div id="set-saved" class="saved"></div>
+      </fieldset>
+
+      <div class="dlg-actions">
+        <button id="set-cancel" class="btn" type="button">Cancel</button>
+        <button id="set-ok" class="btn primary" type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="drop" class="drop hidden"><div class="dropbox">Drop images to mount</div></div>
+  <div id="closing" class="overlay hidden"><div class="spinner big"></div><div>Unmounting all drives — please wait…</div></div>
+  <div id="toasts" class="toasts"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
